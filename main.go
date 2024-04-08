@@ -1,59 +1,96 @@
 package main
 
 import (
-	"container/heap"
 	"fmt"
+	"notification-service/nq"
+	"time"
 )
 
-type Notification struct {
-	Content  string
-	SendAt   int
-	Priority string
+type VeryHighPriorityNQ struct {
+	nq nq.NQ
 }
 
-type HighPriorityNotificationQueue []*Notification
-
-func (pq HighPriorityNotificationQueue) Len() int { return len(pq) }
-
-func (pq HighPriorityNotificationQueue) Less(i, j int) bool {
-	return pq[i].SendAt < pq[j].SendAt
+type HighPriorityNQ struct {
+	nq nq.NQ
 }
 
-func (pq HighPriorityNotificationQueue) Swap(i, j int) {
-	pq[i], pq[j] = pq[j], pq[i]
+type MediumPriorityNQ struct {
+	nq nq.NQ
 }
 
-func (pq *HighPriorityNotificationQueue) Push(notif any) {
-	newNotif := notif.(Notification)
-	*pq = append(*pq, &newNotif)
+type LowPriorityNQ struct {
+	nq nq.NQ
 }
 
-func (pq *HighPriorityNotificationQueue) Pop() any {
-	old := *pq
-	n := len(old)
-	poppedNotif := old[n-1]
-	old[n-1] = nil
-	*pq = old[0 : n-1]
-	return poppedNotif
-}
+// type RetryNQ []*RetryNotification
 
 func main() {
-	notif1 := Notification{Content: "OTP: 1234", SendAt: 1}
-	notif2 := Notification{Content: "OTP: 3455", SendAt: 2}
-	notif3 := Notification{Content: "OTP: 1234", SendAt: 3}
-	notif4 := Notification{Content: "OTP: 4523", SendAt: 4}
-	notif5 := Notification{Content: "Money Sent: INR 200", SendAt: 5}
+	// vhpnq := VeryHighPriorityNQ{}
+	// hpnq := HighPriorityNQ{}
+	// mpnq := MediumPriorityNQ{}
+	// lpnq := LowPriorityNQ{}
 
-	pq := make(HighPriorityNotificationQueue, 0)
-	heap.Init(&pq)
-	heap.Push(&pq, notif2)
-	heap.Push(&pq, notif4)
-	heap.Push(&pq, notif3)
-	heap.Push(&pq, notif1)
-	heap.Push(&pq, notif5)
+	// vhpnq.nq = make(nq.NQ, 0)
+	// heap.Init(&vhpnq.nq)
 
-	for pq.Len() > 0 {
-		notif := heap.Pop(&pq).(*Notification)
-		fmt.Println(notif)
+	// hpnq.nq = make(nq.NQ, 0)
+	// heap.Init(&hpnq.nq)
+
+	// mpnq.nq = make(nq.NQ, 0)
+	// heap.Init(&mpnq.nq)
+
+	// lpnq.nq = make(nq.NQ, 0)
+	// heap.Init(&lpnq.nq)
+	// heap.Push(&hpnq.nq, notif2)
+	// heap.Push(&hpnq.nq, notif4)
+	// heap.Push(&hpnq.nq, notif3)
+	// heap.Push(&hpnq.nq, notif1)
+	// heap.Push(&hpnq.nq, notif5)
+
+	// for hpnq.nq.Len() > 0 {
+	// 	notif := heap.Pop(&hpnq.nq).(*Notification)
+	// 	fmt.Println(notif)
+	// }
+
+	// veryHighPriorityNCh := make(chan n.Notification, 5000)
+	// highPriorityNCh := make(chan n.Notification, 5000)
+	// medPriorityNCh := make(chan n.Notification, 5000)
+	// lowPriorityNCh := make(chan n.Notification, 5000)
+
+	// for {
+	// 	notif, ok := <-veryHighPriorityNCh
+	// 	if ok {
+	// 		heap.Push(&vhpnq.nq, notif)
+	// 		continue
+	// 	}
+
+	// 	notif, ok = <-highPriorityNCh
+	// 	if ok {
+	// 		heap.Push(&hpnq.nq, notif)
+	// 		continue
+	// 	}
+
+	// 	notif, ok = <-medPriorityNCh
+	// 	if ok {
+	// 		heap.Push(&mpnq.nq, notif)
+	// 		continue
+	// 	}
+
+	// 	notif, ok = <-lowPriorityNCh
+	// 	if ok {
+	// 		heap.Push(&lpnq.nq, notif)
+	// 		continue
+	// 	}
+
+	// 	// check for retry queue
+	// }
+
+	timer := time.NewTimer(1 * time.Second)
+	defer timer.Stop()
+
+	for i := 0; i < 60; i++ {
+		<-timer.C
+		fmt.Println(time.Now())
 	}
+
 }
