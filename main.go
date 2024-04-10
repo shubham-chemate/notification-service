@@ -1,10 +1,11 @@
 package main
 
 import (
-	"fmt"
+	"log"
 	"notification-service/nq"
-	"sync"
 	"time"
+
+	"github.com/go-co-op/gocron/v2"
 )
 
 type VeryHighPriorityNQ struct {
@@ -26,6 +27,30 @@ type LowPriorityNQ struct {
 // type RetryNQ []*RetryNotification
 
 func main() {
+	s, err := gocron.NewScheduler()
+	if err != nil {
+		log.Println(err)
+		return
+	}
+
+	j, err := s.NewJob(gocron.DurationJob(
+		10*time.Second,
+	),
+		gocron.NewTask(func(s string) {
+			log.Println(s)
+		}, "first-job"))
+	if err != nil {
+		log.Fatalf(err.Error())
+	}
+
+	log.Println(j.ID())
+
+	s.Start()
+
+	select {}
+
+	// s.Shutdown()
+
 	// vhpnq := VeryHighPriorityNQ{}
 	// hpnq := HighPriorityNQ{}
 	// mpnq := MediumPriorityNQ{}
@@ -91,17 +116,17 @@ func main() {
 
 	// tm, _ := time.Parse("Jan 2, 2006 at 3:04pm (MST)", "Apr 10, 2024 at 4:16pm (IST)")
 
-	var wg sync.WaitGroup
-	for i := 0; i < 100; i++ {
-		wg.Add(1)
-		go func(i int) {
-			defer wg.Done()
-			ii := time.Duration(100 - i)
-			time.Sleep(ii * time.Millisecond)
-			fmt.Printf("GR %d: %v\n", i, time.Now())
-		}(i)
-	}
-	wg.Wait()
+	// var wg sync.WaitGroup
+	// for i := 0; i < 100; i++ {
+	// 	wg.Add(1)
+	// 	go func(i int) {
+	// 		defer wg.Done()
+	// 		ii := time.Duration(100 - i)
+	// 		time.Sleep(ii * time.Millisecond)
+	// 		fmt.Printf("GR %d: %v\n", i, time.Now())
+	// 	}(i)
+	// }
+	// wg.Wait()
 
 	// for i := 0; i < 60; i++ {
 	// <-timer.C
