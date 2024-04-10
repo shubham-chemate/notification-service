@@ -3,6 +3,7 @@ package main
 import (
 	"fmt"
 	"notification-service/nq"
+	"sync"
 	"time"
 )
 
@@ -85,12 +86,26 @@ func main() {
 	// 	// check for retry queue
 	// }
 
-	timer := time.NewTimer(1 * time.Second)
-	defer timer.Stop()
+	// timer := time.NewTimer(1 * time.Second)
+	// defer timer.Stop()
 
-	for i := 0; i < 60; i++ {
-		<-timer.C
-		fmt.Println(time.Now())
+	// tm, _ := time.Parse("Jan 2, 2006 at 3:04pm (MST)", "Apr 10, 2024 at 4:16pm (IST)")
+
+	var wg sync.WaitGroup
+	for i := 0; i < 100; i++ {
+		wg.Add(1)
+		go func(i int) {
+			defer wg.Done()
+			ii := time.Duration(100 - i)
+			time.Sleep(ii * time.Millisecond)
+			fmt.Printf("GR %d: %v\n", i, time.Now())
+		}(i)
 	}
+	wg.Wait()
+
+	// for i := 0; i < 60; i++ {
+	// <-timer.C
+	// fmt.Println(time.Now())
+	// }
 
 }
