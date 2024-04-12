@@ -1,7 +1,9 @@
 package notification
 
+import "time"
+
 type Notification struct {
 	Content  string
-	SendAt   int
+	SendAt   time.Time
 	Priority string
 }

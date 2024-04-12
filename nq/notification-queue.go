@@ -7,7 +7,8 @@ type NQ []*n.Notification
 func (pq NQ) Len() int { return len(pq) }
 
 func (pq NQ) Less(i, j int) bool {
-	return pq[i].SendAt < pq[j].SendAt
+	// return pq[i].SendAt < pq[j].SendAt
+	return true
 }
 
 func (pq NQ) Swap(i, j int) {
