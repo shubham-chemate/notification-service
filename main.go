@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"log"
 	"math/rand"
 	n "notification-service/notification"
 	"time"
@@ -56,71 +55,26 @@ func handleNotification(nn n.Notification, rnCh chan n.Notification) {
 	}
 }
 
-// func runScheduler(tm string, freq time.Duration) {
-// 	loc, err := time.LoadLocation("Asia/Kolkata")
-// 	if err != nil {
-// 		log.Fatalf("ERROR: %v", err)
-// 	}
-// 	tm_, _ := time.ParseInLocation("15:04:05", tm, loc)
-// 	stm := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), tm_.Hour(), tm_.Minute(), tm_.Second(), 0, tm_.Location())
-
-// 	for {
-// 		if time.Now().After(stm) {
-// 			// Run scheduled functions
-// 			log.Println("Running Scheduled Functions..")
-
-// 			stm = stm.Add(freq)
-// 		}
-// 	}
-// }
-
-func runScheduler(tm string, freq time.Duration) {
-	loc, err := time.LoadLocation("Asia/Kolkata")
-	if err != nil {
-		log.Fatalf("ERROR: %v", err)
-	}
-	tm_, _ := time.ParseInLocation("15:04:05", tm, loc)
-	stm := time.Date(time.Now().Year(), time.Now().Month(), time.Now().Day(), tm_.Hour(), tm_.Minute(), tm_.Second(), 0, tm_.Location())
-
-	duration := stm.Sub(time.Now().In(loc))
-
-	var timer *time.Timer
-
-	timer = time.AfterFunc(duration, func() {
-		timer.Reset(freq)
-
-		// Run scheduled functions
-		log.Println("Running Scheduled Functions..")
-
-	})
-
-	select {}
-}
-
 func main() {
 
-	go runScheduler("23:20:00", 30*time.Second)
+	vhpnCh := make(chan n.Notification)
+	nCh := make(chan n.Notification)
+	rnCh := make(chan n.Notification)
 
-	select {}
+	go floodNotifications(vhpnCh, nCh)
 
-	// vhpnCh := make(chan n.Notification)
-	// nCh := make(chan n.Notification)
-	// rnCh := make(chan n.Notification)
-
-	// go floodNotifications(vhpnCh, nCh)
-
-	// for i := 0; i < 100; i++ {
-	// 	if nn, ok := <-vhpnCh; ok {
-	// 		go handleNotification(nn, rnCh)
-	// 		continue
-	// 	}
-	// 	if nn, ok := <-nCh; ok {
-	// 		go handleNotification(nn, rnCh)
-	// 		continue
-	// 	}
-	// 	if rn, ok := <-rnCh; ok {
-	// 		go handleNotification(rn, rnCh)
-	// 	}
-	// }
+	for i := 0; i < 100; i++ {
+		if nn, ok := <-vhpnCh; ok {
+			go handleNotification(nn, rnCh)
+			continue
+		}
+		if nn, ok := <-nCh; ok {
+			go handleNotification(nn, rnCh)
+			continue
+		}
+		if rn, ok := <-rnCh; ok {
+			go handleNotification(rn, rnCh)
+		}
+	}
 
 }
