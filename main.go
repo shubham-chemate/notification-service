@@ -34,8 +34,7 @@ func sendNotification(w http.ResponseWriter, r *http.Request) {
 	data := newNotification.Data
 
 	log.Println("Received new notification to send")
-	log.Printf("UserName: %v", userName)
-	log.Printf("Data: %v", data)
+	log.Printf("UserName: %v, Data: %v", userName, data)
 
 	localCache[userName] = append(localCache[userName], data)
 
@@ -47,6 +46,18 @@ func getNotifications(w http.ResponseWriter, r *http.Request) {
 		w.Write([]byte("wrong http method type expected:POST, got:" + r.Method))
 		return
 	}
+
+	userName := r.URL.Path[len("/get-notifications/"):]
+	log.Printf("Requested notification for user: %v", userName)
+
+	notifications, ok := localCache[userName]
+	if !ok {
+		w.Write([]byte("Don't have notifications"))
+		return
+	}
+
+	log.Printf("sending notification to user: %+v", notifications[0])
+	w.Write([]byte(notifications[0]))
 
 	// w.Header().Set("Content-Type", "text/event-stream")
 	// w.Header().Set("Cache-Control", "no-cache")
@@ -63,7 +74,7 @@ func getNotifications(w http.ResponseWriter, r *http.Request) {
 
 	// }
 
-	w.Write([]byte("wait a while"))
+	// w.Write([]byte("wait a while"))
 }
 
 func main() {
@@ -71,7 +82,7 @@ func main() {
 	localCache = make(map[string][]string)
 
 	http.HandleFunc("/send-notification", sendNotification)
-	http.HandleFunc("/get-notifications", getNotifications)
+	http.HandleFunc("/get-notifications/", getNotifications)
 	err := http.ListenAndServe(":8000", nil)
 	if err != nil {
 		log.Println("Error Starting the Server", err)
