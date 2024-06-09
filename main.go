@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"log"
 	"net/http"
+	"os"
 )
 
 var localCache map[string][]string
@@ -83,7 +84,13 @@ func main() {
 
 	http.HandleFunc("/send-notification", sendNotification)
 	http.HandleFunc("/get-notifications/", getNotifications)
-	err := http.ListenAndServe(":8000", nil)
+
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "3000"
+	}
+
+	err := http.ListenAndServe("0.0.0.0:"+port, nil)
 	if err != nil {
 		log.Println("Error Starting the Server", err)
 	}
