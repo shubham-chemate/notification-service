@@ -9,9 +9,9 @@ import (
 )
 
 type Message struct {
-	SendFrom string `json:sendFrom`
-	SendTo   string `json:sendTo`
-	Text     string `json:text`
+	SendFrom string `json:"sendFrom"`
+	SendTo   string `json:"sendTo"`
+	Text     string `json:"text"`
 }
 
 var readyToSendMsgs map[string][]Message
