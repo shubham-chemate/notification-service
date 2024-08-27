@@ -19,6 +19,8 @@ var readyToSendMsgs map[string][]Message
 var servicesList map[string]bool
 var usersList map[string]bool
 var userPreferences map[string][]string
+var userMsgCnt map[string]int
+var MAX_MSGS_PER_DAY = 1
 
 func readMessages(inputCh chan<- Message) {
 	file, err := os.Open("./data-sm.json")
@@ -100,6 +102,21 @@ func checkUserPref(msg Message) (bool, string) {
 	return false, "User Preference Not Found"
 }
 
+func checkUserMsgCnt(msg Message) (bool, string) {
+	cnt, ok := userMsgCnt[msg.SendTo]
+	if !ok {
+		userMsgCnt[msg.SendTo] = 1
+		return true, ""
+	}
+
+	if cnt < MAX_MSGS_PER_DAY {
+		userMsgCnt[msg.SendTo] = cnt + 1
+		return true, ""
+	}
+
+	return false, "User already exceeded limit for number of per day messages"
+}
+
 func validateMessage(inputCh <-chan Message, validMsgCh chan<- Message) {
 	for msg := range inputCh {
 		log.Printf("Received message for validation: %+v", msg)
@@ -134,6 +151,12 @@ func validateMessage(inputCh <-chan Message, validMsgCh chan<- Message) {
 			continue
 		}
 
+		ok, failReason = checkUserMsgCnt(msg)
+		if !ok {
+			log.Printf("Validation Failed, msg: %v, error: %v", msg, failReason)
+			continue
+		}
+
 		validMsgCh <- msg
 	}
 }
@@ -142,7 +165,10 @@ func processMessage(validMsgCh <-chan Message, readyToSendCh chan<- Message) {
 	for msg := range validMsgCh {
 		log.Printf("Received Message For Processing: %v", msg)
 
-		// notification priority
+		// store the msg in the db for analysis purpose
+		// sync store for low-priority msgs
+		// async store for high-priority msgs
+		// write heavy db
 
 		readyToSendCh <- msg
 	}
@@ -172,6 +198,7 @@ func main() {
 	servicesList = make(map[string]bool)
 	usersList = make(map[string]bool)
 	userPreferences = make(map[string][]string)
+	userMsgCnt = make(map[string]int)
 
 	servicesList["system"] = true
 	usersList["Shubham"] = true
