@@ -22,7 +22,7 @@ var userPreferences map[string][]string
 var userMsgCnt map[string]int
 var MAX_MSGS_PER_DAY = 1
 
-func readMessages(inputCh chan<- Message) {
+func readMessages(inputCh chan Message) {
 	file, err := os.Open("./data-sm.json")
 	if err != nil {
 		log.Fatal(err)
@@ -47,6 +47,12 @@ func readMessages(inputCh chan<- Message) {
 
 	if err := scanner.Err(); err != nil {
 		log.Fatal(err)
+	}
+}
+
+func processMessages(inputCh <-chan Message) {
+	for msg := range inputCh {
+		go validateMessage(msg)
 	}
 }
 
@@ -117,82 +123,74 @@ func checkUserMsgCnt(msg Message) (bool, string) {
 	return false, "User already exceeded limit for number of per day messages"
 }
 
-func validateMessage(inputCh <-chan Message, validMsgCh chan<- Message) {
-	for msg := range inputCh {
-		log.Printf("Received message for validation: %+v", msg)
+func validateMessage(msg Message) {
+	log.Printf("Received message for validation: %+v", msg)
 
-		ok, failReason := checkFormat(msg)
-		if !ok {
-			log.Printf("Validation Failed, msg: %+v, error: %v", msg, failReason)
-			continue
-		}
-
-		ok, failReason = checkSender(msg)
-		if !ok {
-			log.Printf("Validation Failed, msg: %+v, error: %v", msg, failReason)
-			continue
-		}
-
-		ok, failReason = checkReceiver(msg)
-		if !ok {
-			log.Printf("Validation Failed, msg: %+v, error: %v", msg, failReason)
-			continue
-		}
-
-		ok, failReason = checkCompliance(msg)
-		if !ok {
-			log.Printf("Validation Failed, msg: %+v, error: %v", msg, failReason)
-			continue
-		}
-
-		ok, failReason = checkUserPref(msg)
-		if !ok {
-			log.Printf("Validation Failed, msg: %+v, error: %v", msg, failReason)
-			continue
-		}
-
-		ok, failReason = checkUserMsgCnt(msg)
-		if !ok {
-			log.Printf("Validation Failed, msg: %v, error: %v", msg, failReason)
-			continue
-		}
-
-		validMsgCh <- msg
+	ok, failReason := checkFormat(msg)
+	if !ok {
+		log.Printf("Validation Failed, msg: %+v, error: %v", msg, failReason)
+		return
 	}
+
+	ok, failReason = checkSender(msg)
+	if !ok {
+		log.Printf("Validation Failed, msg: %+v, error: %v", msg, failReason)
+		return
+	}
+
+	ok, failReason = checkReceiver(msg)
+	if !ok {
+		log.Printf("Validation Failed, msg: %+v, error: %v", msg, failReason)
+		return
+	}
+
+	ok, failReason = checkCompliance(msg)
+	if !ok {
+		log.Printf("Validation Failed, msg: %+v, error: %v", msg, failReason)
+		return
+	}
+
+	ok, failReason = checkUserPref(msg)
+	if !ok {
+		log.Printf("Validation Failed, msg: %+v, error: %v", msg, failReason)
+		return
+	}
+
+	ok, failReason = checkUserMsgCnt(msg)
+	if !ok {
+		log.Printf("Validation Failed, msg: %v, error: %v", msg, failReason)
+		return
+	}
+
+	processMessage(msg)
 }
 
-func processMessage(validMsgCh <-chan Message, readyToSendCh chan<- Message) {
-	for msg := range validMsgCh {
-		log.Printf("Received Message For Processing: %v", msg)
+func processMessage(msg Message) {
+	log.Printf("Received Message For Processing: %v", msg)
 
-		// store the msg in the db for analysis purpose
-		// sync store for low-priority msgs
-		// async store for high-priority msgs
-		// write heavy db
+	// store the msg in the db for analysis purpose
+	// sync store for low-priority msgs
+	// async store for high-priority msgs
+	// write heavy db
 
-		readyToSendCh <- msg
-	}
+	sendMessage(msg)
 }
 
-func sendMessage(readyToSendCh <-chan Message) {
-	for msg := range readyToSendCh {
-		log.Printf("Received Message for Sending: %v", msg)
+func sendMessage(msg Message) {
+	log.Printf("Received Message for Sending: %v", msg)
 
-		rcvMsgs, ok := readyToSendMsgs[msg.SendTo]
-		if !ok {
-			rcvMsgs = []Message{}
-		}
-		rcvMsgs = append(rcvMsgs, msg)
-		readyToSendMsgs[msg.SendTo] = rcvMsgs
+	rcvMsgs, ok := readyToSendMsgs[msg.SendTo]
+	if !ok {
+		rcvMsgs = []Message{}
 	}
+	rcvMsgs = append(rcvMsgs, msg)
+	readyToSendMsgs[msg.SendTo] = rcvMsgs
 }
 
 func main() {
 	log.Println("HELLO :)")
 
 	inputCh := make(chan Message)
-	validMsgCh := make(chan Message)
-	readyToSendCh := make(chan Message)
 
 	readyToSendMsgs = make(map[string][]Message)
 	servicesList = make(map[string]bool)
@@ -212,12 +210,7 @@ func main() {
 	userPreferences["Kaiwalya"] = []string{"xyz"}
 
 	go readMessages(inputCh)
-
-	go validateMessage(inputCh, validMsgCh)
-
-	go processMessage(validMsgCh, readyToSendCh)
-
-	go sendMessage(readyToSendCh)
+	go processMessages(inputCh)
 
 	time.Sleep(5 * time.Second)
 
