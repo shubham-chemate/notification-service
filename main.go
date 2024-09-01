@@ -187,7 +187,7 @@ func sendMessage(msg Message) {
 	readyToSendMsgs[msg.SendTo] = rcvMsgs
 }
 
-func main() {
+func main1() {
 	log.Println("HELLO :)")
 
 	inputCh := make(chan Message)
@@ -217,4 +217,34 @@ func main() {
 	for k, v := range readyToSendMsgs {
 		log.Println(k, v)
 	}
+}
+
+func main() {
+	// ih := &IntHeap{}
+	// heap.Init(ih)
+	// heap.Push(ih, 1)
+	// heap.Push(ih, 5)
+	// heap.Push(ih, 2)
+	// heap.Push(ih, 4)
+
+	// fmt.Println(heap.Pop(ih))
+	// fmt.Println(heap.Pop(ih))
+
+	// heap.Push(ih, 1)
+	// fmt.Println(heap.Pop(ih))
+
+	sh := SafeHeap{}
+
+	sh.Push(1)
+	sh.Push(5)
+	sh.Push(3)
+	sh.Push(2)
+
+	log.Println(sh.Pop())
+	log.Println(sh.Pop())
+
+	// sh.Push(3)
+	// log.Println(sh.Pop())
+	// log.Println(sh.Pop())
+
 }
